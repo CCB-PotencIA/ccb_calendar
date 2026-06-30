@@ -1,0 +1,149 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  /* Shadcn color tokens → CSS variables */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* Radii */
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  /* CCB brand colors as Tailwind utilities */
+  --color-ccb-blue: #004c9e;
+  --color-ccb-cyan: #009de2;
+  --color-ccb-blue-dark: #002d6b;
+  --color-ccb-blue-light: #E6F0FA;
+  --color-ccb-green: #2D8A4E;
+  --color-ccb-orange: #E67E22;
+
+  /* Deadline status colors */
+  --color-status-overdue: #C0392B;
+  --color-status-due-soon-15: #E67E22;
+  --color-status-due-soon-30: #f59e0b;
+  --color-status-on-track: #2D8A4E;
+
+  /* Font */
+  --font-sans: var(--font-montserrat);
+}
+
+:root {
+  --radius: 0.5rem;
+
+  /* CCB Brand Palette */
+  --ccb-blue: #004c9e;
+  --ccb-cyan: #009de2;
+  --ccb-blue-dark: #002d6b;
+  --ccb-blue-light: #E6F0FA;
+  --ccb-green: #2D8A4E;
+  --ccb-orange: #E67E22;
+
+  /* Shadcn Design Tokens — mapped to CCB brand */
+  --background: #eef1f6;
+  --foreground: #1a1a2e;
+
+  --card: #ffffff;
+  --card-foreground: #1a1a2e;
+
+  --popover: #ffffff;
+  --popover-foreground: #1a1a2e;
+
+  --primary: #004c9e;
+  --primary-foreground: #ffffff;
+
+  --secondary: #E6F0FA;
+  --secondary-foreground: #004c9e;
+
+  --muted: #f0f4f8;
+  --muted-foreground: #4a5568;
+
+  --accent: #009de2;
+  --accent-foreground: #ffffff;
+
+  --destructive: #C0392B;
+  --destructive-foreground: #ffffff;
+
+  --border: #e2e8f0;
+  --input: #e2e8f0;
+  --ring: #004c9e;
+
+  /* Charts */
+  --chart-1: #004c9e;
+  --chart-2: #009de2;
+  --chart-3: #2D8A4E;
+  --chart-4: #E67E22;
+  --chart-5: #8B5CF6;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), 'Montserrat', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* FullCalendar reset to play nice with Tailwind */
+.fc {
+  font-family: var(--font-sans), sans-serif;
+}
+
+.fc .fc-button {
+  background-color: var(--primary);
+  border-color: var(--primary);
+  font-family: var(--font-sans), sans-serif;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.fc .fc-button:hover {
+  background-color: var(--ccb-blue-dark);
+  border-color: var(--ccb-blue-dark);
+}
+
+.fc .fc-button-primary:not(:disabled).fc-button-active,
+.fc .fc-button-primary:not(:disabled):active {
+  background-color: var(--ccb-blue-dark);
+  border-color: var(--ccb-blue-dark);
+}
+
+.fc .fc-daygrid-day-number,
+.fc .fc-col-header-cell-cushion {
+  color: var(--foreground);
+  font-weight: 600;
+}
+
+.fc .fc-daygrid-day.fc-day-today {
+  background-color: var(--ccb-blue-light);
+}
+
+.fc-event {
+  border: none !important;
+  border-radius: 4px !important;
+  cursor: pointer;
+}
