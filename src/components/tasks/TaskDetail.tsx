@@ -1,10 +1,22 @@
 "use client";
 
 import { useState } from "react";
-import { AlertTriangle, Calendar, Building2, User, FileText, Pencil } from "lucide-react";
+import {
+  AlertTriangle,
+  Calendar,
+  Building2,
+  User,
+  FileText,
+  Pencil,
+  ListChecks,
+  CalendarCheck,
+  Trash2,
+  Plus,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { Input } from "@/components/ui/input";
 import {
   cn,
   getDeadlineStatus,
@@ -20,7 +32,13 @@ import { TaskStatusBadge } from "./TaskStatusBadge";
 import { TaskPriorityBadge } from "./TaskPriorityBadge";
 import { TaskProgressBar } from "./TaskProgressBar";
 import { TaskDialog } from "./TaskDialog";
-import type { TaskWithRelations } from "@/types/task.types";
+import {
+  useAddSubtask,
+  useUpdateSubtask,
+  useDeleteSubtask,
+  useUpdateFollowup,
+} from "@/hooks/useTask";
+import type { TaskWithRelations, Followup } from "@/types/task.types";
 
 interface TaskDetailProps {
   task: TaskWithRelations;
@@ -28,6 +46,22 @@ interface TaskDetailProps {
 
 export function TaskDetail({ task }: TaskDetailProps) {
   const [editOpen, setEditOpen] = useState(false);
+  const [newSubtaskTitle, setNewSubtaskTitle] = useState("");
+  const addSubtask = useAddSubtask(task.id);
+  const updateSubtask = useUpdateSubtask(task.id);
+  const deleteSubtask = useDeleteSubtask(task.id);
+
+  const subtasks = task.subtasks ?? [];
+  const followups = task.followups ?? [];
+  const completedSubtasksCount = subtasks.filter((s) => s.completed).length;
+
+  function handleAddSubtask() {
+    const trimmed = newSubtaskTitle.trim();
+    if (!trimmed) return;
+    addSubtask.mutate(trimmed);
+    setNewSubtaskTitle("");
+  }
+
   const deadlineStatus = task.deadline_status ?? getDeadlineStatus(task.plazo_interno);
   const deadlineTextClass = getDeadlineTextClass(deadlineStatus);
   const deadlineBgClass = getDeadlineBgClass(deadlineStatus);
@@ -45,9 +79,6 @@ export function TaskDetail({ task }: TaskDetailProps) {
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
             <h1 className="text-xl font-bold text-foreground leading-tight">{task.title}</h1>
-            {task.actividad && (
-              <p className="text-sm text-muted-foreground mt-1">{task.actividad}</p>
-            )}
             <div className="flex items-center gap-2 mt-3 flex-wrap">
               <TaskStatusBadge status={task.status} />
               <TaskPriorityBadge priority={task.priority} />
@@ -80,15 +111,24 @@ export function TaskDetail({ task }: TaskDetailProps) {
 
         {/* Metadata grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {/* Department */}
-          {task.department && (
+          {/* Department(s) */}
+          {(task.departments?.length ?? (task.department ? 1 : 0)) > 0 && (
             <Card className="border-border">
               <CardContent className="p-4">
                 <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1.5">
                   <Building2 className="h-3.5 w-3.5" />
-                  <span>Unidad</span>
+                  <span>{(task.departments?.length ?? 1) > 1 ? "Unidades" : "Unidad"}</span>
                 </div>
-                <DepartmentBadge name={task.department.name} color={task.department.color} />
+                <div className="flex flex-wrap gap-2">
+                  {(task.departments && task.departments.length > 0
+                    ? task.departments
+                    : task.department
+                      ? [task.department]
+                      : []
+                  ).map((dept) => (
+                    <DepartmentBadge key={dept.id} name={dept.name} color={dept.color} />
+                  ))}
+                </div>
               </CardContent>
             </Card>
           )}
@@ -202,6 +242,99 @@ export function TaskDetail({ task }: TaskDetailProps) {
           </Card>
         )}
 
+        {/* Subtareas */}
+        <Card className="border-border">
+          <CardHeader className="pb-3 pt-4 px-4">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+              <ListChecks className="h-4 w-4" />
+              Subtareas ({completedSubtasksCount}/{subtasks.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="px-4 pb-4 space-y-3">
+            {subtasks.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Sin subtareas aún.</p>
+            ) : (
+              <div className="space-y-2">
+                {subtasks.map((s) => (
+                  <div key={s.id} className="flex items-center gap-2 group">
+                    <input
+                      type="checkbox"
+                      checked={s.completed}
+                      onChange={() =>
+                        updateSubtask.mutate({
+                          subtaskId: s.id,
+                          data: { completed: !s.completed },
+                        })
+                      }
+                      className="h-4 w-4 rounded border-input"
+                    />
+                    <span
+                      className={cn(
+                        "flex-1 text-sm",
+                        s.completed && "line-through text-muted-foreground"
+                      )}
+                    >
+                      {s.title}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => deleteSubtask.mutate(s.id)}
+                      className="text-muted-foreground hover:text-destructive shrink-0"
+                      aria-label="Eliminar subtarea"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="flex items-center gap-2">
+              <Input
+                value={newSubtaskTitle}
+                onChange={(e) => setNewSubtaskTitle(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    handleAddSubtask();
+                  }
+                }}
+                placeholder="Agregar subtarea..."
+                className="h-8 text-sm"
+              />
+              <button
+                type="button"
+                onClick={handleAddSubtask}
+                className="text-muted-foreground hover:text-foreground shrink-0"
+                aria-label="Agregar subtarea"
+              >
+                <Plus className="h-4 w-4" />
+              </button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Seguimientos */}
+        <Card className="border-border">
+          <CardHeader className="pb-3 pt-4 px-4">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+              <CalendarCheck className="h-4 w-4" />
+              Seguimientos
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="px-4 pb-4">
+            {followups.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Sin seguimientos registrados.</p>
+            ) : (
+              <div className="space-y-4">
+                {followups.map((f) => (
+                  <FollowupRow key={f.id} taskId={task.id} followup={f} />
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Description */}
         {task.description && (
           <Card className="border-border">
@@ -222,5 +355,55 @@ export function TaskDetail({ task }: TaskDetailProps) {
 
       <TaskDialog open={editOpen} onOpenChange={setEditOpen} task={task} />
     </>
+  );
+}
+
+function FollowupRow({ taskId, followup }: { taskId: string; followup: Followup }) {
+  const updateFollowup = useUpdateFollowup(taskId);
+  const [notes, setNotes] = useState(followup.notes ?? "");
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-start gap-2">
+        <input
+          type="checkbox"
+          checked={followup.completed}
+          onChange={() =>
+            updateFollowup.mutate({
+              followupId: followup.id,
+              data: { completed: !followup.completed },
+            })
+          }
+          className="h-4 w-4 rounded border-input mt-0.5"
+        />
+        <div className="flex-1">
+          <span
+            className={cn(
+              "text-sm",
+              followup.completed && "line-through text-muted-foreground"
+            )}
+          >
+            {followup.label}
+          </span>
+          {followup.followup_date && (
+            <span className="text-xs text-muted-foreground ml-2">
+              {formatDate(followup.followup_date)}
+            </span>
+          )}
+        </div>
+      </div>
+      <textarea
+        className="flex min-h-[60px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
+        placeholder="Notas del seguimiento..."
+        value={notes}
+        onChange={(e) => setNotes(e.target.value)}
+        onBlur={() =>
+          updateFollowup.mutate({
+            followupId: followup.id,
+            data: { notes },
+          })
+        }
+      />
+    </div>
   );
 }

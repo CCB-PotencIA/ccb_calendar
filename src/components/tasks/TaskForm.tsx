@@ -52,6 +52,7 @@ interface TaskFormProps {
 
 export function TaskForm({ task, onSuccess }: TaskFormProps) {
   const [assigneePopoverOpen, setAssigneePopoverOpen] = useState(false);
+  const [tagDraft, setTagDraft] = useState("");
   const { data: departments = [] } = useDepartments();
   const { data: users = [] } = useUsers();
   const createTask = useCreateTask();
@@ -63,7 +64,6 @@ export function TaskForm({ task, onSuccess }: TaskFormProps) {
     resolver: zodResolver(taskSchema),
     defaultValues: {
       title: task?.title ?? "",
-      actividad: task?.actividad ?? "",
       origen: task?.origen ?? "",
       description: task?.description ?? "",
       department_id: task?.department_id ?? "",
@@ -74,6 +74,8 @@ export function TaskForm({ task, onSuccess }: TaskFormProps) {
       start_date: task?.start_date ?? "",
       plazo_interno: task?.plazo_interno ?? "",
       plazo_legal: task?.plazo_legal ?? "",
+      responsible_tags: task?.responsible_tags ?? [],
+      source_ref: task?.source_ref ?? "",
     },
   });
 
@@ -93,6 +95,7 @@ export function TaskForm({ task, onSuccess }: TaskFormProps) {
   }
 
   const selectedAssigneeIds = form.watch("assignee_ids") ?? [];
+  const selectedTags = form.watch("responsible_tags") ?? [];
   const isSubmitting = createTask.isPending || updateTask.isPending;
 
   function toggleAssignee(userId: string) {
@@ -104,6 +107,23 @@ export function TaskForm({ task, onSuccess }: TaskFormProps) {
     } else {
       form.setValue("assignee_ids", [...current, userId], { shouldValidate: true });
     }
+  }
+
+  function addTag(rawTag: string) {
+    const trimmed = rawTag.trim();
+    if (!trimmed) return;
+    const current = form.getValues("responsible_tags") ?? [];
+    if (current.includes(trimmed)) return;
+    form.setValue("responsible_tags", [...current, trimmed], { shouldValidate: true });
+  }
+
+  function removeTag(tag: string) {
+    const current = form.getValues("responsible_tags") ?? [];
+    form.setValue(
+      "responsible_tags",
+      current.filter((t) => t !== tag),
+      { shouldValidate: true }
+    );
   }
 
   return (
@@ -126,12 +146,12 @@ export function TaskForm({ task, onSuccess }: TaskFormProps) {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <FormField
             control={form.control}
-            name="actividad"
+            name="origen"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Actividad</FormLabel>
+                <FormLabel>Origen</FormLabel>
                 <FormControl>
-                  <Input placeholder="Actividad principal" {...field} value={field.value ?? ""} />
+                  <Input placeholder="Origen de la tarea" {...field} value={field.value ?? ""} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -140,12 +160,12 @@ export function TaskForm({ task, onSuccess }: TaskFormProps) {
 
           <FormField
             control={form.control}
-            name="origen"
+            name="source_ref"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Origen</FormLabel>
+                <FormLabel>Referencia externa</FormLabel>
                 <FormControl>
-                  <Input placeholder="Origen de la tarea" {...field} value={field.value ?? ""} />
+                  <Input placeholder="Referencia externa" {...field} value={field.value ?? ""} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -282,6 +302,64 @@ export function TaskForm({ task, onSuccess }: TaskFormProps) {
             )}
           />
         </div>
+
+        <FormField
+          control={form.control}
+          name="responsible_tags"
+          render={() => (
+            <FormItem>
+              <FormLabel>Etiquetas de responsables</FormLabel>
+              <FormControl>
+                <Input
+                  placeholder="Escribe y presiona Enter para agregar"
+                  value={tagDraft}
+                  onChange={(e) => setTagDraft(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === ",") {
+                      e.preventDefault();
+                      addTag(tagDraft);
+                      setTagDraft("");
+                    }
+                  }}
+                />
+              </FormControl>
+
+              <div className="flex flex-wrap gap-1.5 mt-1.5">
+                {departments.map((d) => (
+                  <button
+                    key={d.id}
+                    type="button"
+                    onClick={() => addTag(d.name)}
+                    className="text-xs px-2 py-0.5 rounded-full border border-input text-muted-foreground hover:bg-secondary hover:text-secondary-foreground"
+                  >
+                    {d.name}
+                  </button>
+                ))}
+              </div>
+
+              {selectedTags.length > 0 && (
+                <div className="flex flex-wrap gap-1 mt-1.5">
+                  {selectedTags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="inline-flex items-center gap-1 bg-secondary text-secondary-foreground text-xs px-2 py-0.5 rounded-full"
+                    >
+                      {tag}
+                      <button
+                        type="button"
+                        onClick={() => removeTag(tag)}
+                        className="hover:text-destructive"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <FormField

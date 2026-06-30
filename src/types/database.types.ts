@@ -77,7 +77,6 @@ export type Database = {
         Row: {
           id: string;
           title: string;
-          actividad: string | null;
           origen: string | null;
           description: string | null;
           department_id: string;
@@ -89,13 +88,14 @@ export type Database = {
           plazo_legal: string | null;
           plazo_interno: string;
           completed_at: string | null;
+          responsible_tags: string[];
+          source_ref: string | null;
           created_at: string;
           updated_at: string;
         };
         Insert: {
           id?: string;
           title: string;
-          actividad?: string | null;
           origen?: string | null;
           description?: string | null;
           department_id: string;
@@ -107,12 +107,13 @@ export type Database = {
           plazo_legal?: string | null;
           plazo_interno: string;
           completed_at?: string | null;
+          responsible_tags?: string[];
+          source_ref?: string | null;
           created_at?: string;
           updated_at?: string;
         };
         Update: {
           title?: string;
-          actividad?: string | null;
           origen?: string | null;
           description?: string | null;
           department_id?: string;
@@ -123,6 +124,8 @@ export type Database = {
           plazo_legal?: string | null;
           plazo_interno?: string;
           completed_at?: string | null;
+          responsible_tags?: string[];
+          source_ref?: string | null;
           updated_at?: string;
         };
         Relationships: [
@@ -169,6 +172,109 @@ export type Database = {
             columns: ["profile_id"];
             isOneToOne: false;
             referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      task_departments: {
+        Row: {
+          task_id: string;
+          department_id: string;
+        };
+        Insert: {
+          task_id: string;
+          department_id: string;
+        };
+        Update: {
+          task_id?: string;
+          department_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "task_departments_task_id_fkey";
+            columns: ["task_id"];
+            isOneToOne: false;
+            referencedRelation: "tasks";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "task_departments_department_id_fkey";
+            columns: ["department_id"];
+            isOneToOne: false;
+            referencedRelation: "departments";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      task_subtasks: {
+        Row: {
+          id: string;
+          task_id: string;
+          title: string;
+          completed: boolean;
+          position: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          task_id: string;
+          title: string;
+          completed?: boolean;
+          position?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          title?: string;
+          completed?: boolean;
+          position?: number;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "task_subtasks_task_id_fkey";
+            columns: ["task_id"];
+            isOneToOne: false;
+            referencedRelation: "tasks";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      task_followups: {
+        Row: {
+          id: string;
+          task_id: string;
+          label: string;
+          followup_date: string | null;
+          completed: boolean;
+          notes: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          task_id: string;
+          label: string;
+          followup_date?: string | null;
+          completed?: boolean;
+          notes?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          label?: string;
+          followup_date?: string | null;
+          completed?: boolean;
+          notes?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "task_followups_task_id_fkey";
+            columns: ["task_id"];
+            isOneToOne: false;
+            referencedRelation: "tasks";
             referencedColumns: ["id"];
           }
         ];
@@ -241,7 +347,6 @@ export type Database = {
         Row: {
           id: string;
           title: string;
-          actividad: string | null;
           origen: string | null;
           description: string | null;
           department_id: string;
@@ -253,6 +358,8 @@ export type Database = {
           plazo_legal: string | null;
           plazo_interno: string;
           completed_at: string | null;
+          responsible_tags: string[];
+          source_ref: string | null;
           created_at: string;
           updated_at: string;
           deadline_status: "overdue" | "due_soon_15" | "due_soon_30" | "on_track";

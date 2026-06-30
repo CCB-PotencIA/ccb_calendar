@@ -3,13 +3,14 @@ import { KpiGrid } from "@/components/dashboard/KpiGrid";
 import { DepartmentChart } from "@/components/dashboard/DepartmentChart";
 import { UpcomingTasksWidget } from "@/components/dashboard/UpcomingTasksWidget";
 import { TaskListPanel } from "@/components/dashboard/TaskListPanel";
-import { getDeadlineStatus } from "@/lib/utils";
+import { getDeadlineStatus, normalizeDepartments } from "@/lib/utils";
 import type { DashboardStats, DepartmentTaskCount, TaskWithRelations } from "@/types/task.types";
+
+type RawDept = { id: string; name: string; color: string };
 
 type RawTask = {
   id: string;
   title: string;
-  actividad: string | null;
   origen: string | null;
   description: string | null;
   department_id: string;
@@ -21,9 +22,12 @@ type RawTask = {
   plazo_legal: string | null;
   plazo_interno: string;
   completed_at: string | null;
+  responsible_tags: string[];
+  source_ref: string | null;
   created_at: string;
   updated_at: string;
-  departments: { id: string; name: string; color: string } | null;
+  departments: RawDept | null;
+  task_departments: Array<{ department: RawDept | null }>;
   task_assignees: Array<{
     profile_id: string;
     profiles: {
@@ -44,7 +48,8 @@ type RawStatTask = {
   status: string;
   department_id: string;
   plazo_interno: string;
-  departments: { id: string; name: string; color: string } | null;
+  departments: RawDept | null;
+  task_departments: Array<{ department: RawDept | null }>;
 };
 
 export default async function DashboardPage() {
@@ -57,12 +62,17 @@ export default async function DashboardPage() {
   const [tasksResult, upcomingResult] = await Promise.all([
     supabase
       .from("tasks")
-      .select("id, status, department_id, plazo_interno, departments(id, name, color)"),
+      .select(`
+        id, status, department_id, plazo_interno,
+        departments(id, name, color),
+        task_departments(department:departments(id, name, color))
+      `),
     supabase
       .from("tasks")
       .select(`
         *,
         departments!inner(id, name, color),
+        task_departments(department:departments(id, name, color)),
         task_assignees(profile_id, profiles(id, email, full_name, avatar_url, role, department_id, created_at, updated_at))
       `)
       .not("status", "in", "(completed,cancelled)")
@@ -90,18 +100,26 @@ export default async function DashboardPage() {
   >();
 
   for (const task of allTasks) {
-    const dept = task.departments;
-    if (!dept) continue;
-    const existing = deptMap.get(dept.id);
-    if (existing) {
-      existing.count += 1;
-    } else {
-      deptMap.set(dept.id, {
-        department_id: dept.id,
-        department_name: dept.name,
-        department_color: dept.color,
-        count: 1,
-      });
+    const departments = normalizeDepartments({
+      department_id: task.department_id,
+      department: task.departments as unknown as import("@/types/task.types").Department | null,
+      task_departments: task.task_departments as unknown as Array<{
+        department: import("@/types/task.types").Department | null;
+      }>,
+    });
+
+    for (const dept of departments) {
+      const existing = deptMap.get(dept.id);
+      if (existing) {
+        existing.count += 1;
+      } else {
+        deptMap.set(dept.id, {
+          department_id: dept.id,
+          department_name: dept.name,
+          department_color: dept.color,
+          count: 1,
+        });
+      }
     }
   }
 
@@ -110,6 +128,21 @@ export default async function DashboardPage() {
   const upcomingRaw = (upcomingResult.data ?? []) as unknown as RawTask[];
   const upcomingTasks: TaskWithRelations[] = upcomingRaw.map((t) => {
     const dept = t.departments ?? { id: "", name: "", color: "#004c9e", created_at: "" };
+    const fullDepartment = {
+      id: dept.id,
+      name: dept.name,
+      color: dept.color,
+      created_at: (dept as { created_at?: string }).created_at ?? "",
+    };
+    const departments = normalizeDepartments({
+      department_id: t.department_id,
+      department: fullDepartment,
+      task_departments: (t.task_departments ?? []).map((row) => ({
+        department: row.department
+          ? { ...row.department, created_at: "" }
+          : null,
+      })),
+    });
     const assignees = (t.task_assignees ?? []).map((r) => ({
       ...r.profiles,
       role: r.profiles.role as "admin" | "member",
@@ -118,7 +151,6 @@ export default async function DashboardPage() {
     return {
       id: t.id,
       title: t.title,
-      actividad: t.actividad ?? null,
       origen: t.origen ?? null,
       description: t.description ?? null,
       department_id: t.department_id,
@@ -130,10 +162,15 @@ export default async function DashboardPage() {
       plazo_legal: t.plazo_legal ?? null,
       plazo_interno: t.plazo_interno,
       completed_at: t.completed_at ?? null,
+      responsible_tags: t.responsible_tags ?? [],
+      source_ref: t.source_ref ?? null,
       created_at: t.created_at,
       updated_at: t.updated_at,
-      department: { id: dept.id, name: dept.name, color: dept.color, created_at: (dept as { created_at?: string }).created_at ?? "" },
+      department: fullDepartment,
+      departments,
       assignees,
+      subtasks: [],
+      followups: [],
       deadline_status: getDeadlineStatus(t.plazo_interno),
       legal_deadline_warning: t.plazo_legal
         ? new Date(t.plazo_legal) < new Date(t.plazo_interno)

@@ -37,9 +37,6 @@ export function TaskCard({ task, onEdit, onDelete }: TaskCardProps) {
             <h3 className="font-semibold text-sm text-foreground line-clamp-2 leading-snug">
               {task.title}
             </h3>
-            {task.actividad && (
-              <p className="text-xs text-muted-foreground mt-0.5 truncate">{task.actividad}</p>
-            )}
           </div>
           <div className="flex items-center gap-1 shrink-0">
             {onEdit && (
@@ -65,14 +62,34 @@ export function TaskCard({ task, onEdit, onDelete }: TaskCardProps) {
           </div>
         </div>
 
-        {task.department && (
-          <div className="mb-2">
+        {task.departments && task.departments.length > 0 ? (
+          <div className="flex items-center gap-1.5 mb-2">
             <DepartmentBadge
-              name={task.department.name}
-              color={task.department.color}
+              name={task.departments[0].name}
+              color={task.departments[0].color}
               size="sm"
             />
+            {task.departments.length > 2 && (
+              <DepartmentBadge count={task.departments.length - 1} size="sm" />
+            )}
+            {task.departments.length === 2 && (
+              <DepartmentBadge
+                name={task.departments[1].name}
+                color={task.departments[1].color}
+                size="sm"
+              />
+            )}
           </div>
+        ) : (
+          task.department && (
+            <div className="mb-2">
+              <DepartmentBadge
+                name={task.department.name}
+                color={task.department.color}
+                size="sm"
+              />
+            </div>
+          )
         )}
 
         <div className="flex items-center gap-2 mb-3">

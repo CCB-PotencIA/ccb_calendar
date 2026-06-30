@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import { taskSchema } from "@/lib/validations/task.schema";
+import { normalizeDepartments, type RawTaskDepartments } from "@/lib/utils";
 
 export async function GET(request: Request) {
   const supabase = await createClient();
@@ -20,7 +21,8 @@ export async function GET(request: Request) {
     .select(`
       *,
       department:departments(*),
-      assignees:task_assignees(profile:profiles(*))
+      assignees:task_assignees(profile:profiles(*)),
+      task_departments(department:departments(*))
     `)
     .order("plazo_interno", { ascending: true });
 
@@ -47,10 +49,13 @@ export async function GET(request: Request) {
   const { data, error } = await query;
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  // Normalize nested assignees from join
+  // Normalize nested assignees and departments from join
   const tasks = (data ?? []).map((task) => ({
     ...task,
     assignees: task.assignees?.map((a: { profile: unknown }) => a.profile) ?? [],
+    departments: normalizeDepartments(
+      task as unknown as RawTaskDepartments
+    ),
   }));
 
   return NextResponse.json(tasks);
@@ -82,6 +87,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: taskError?.message }, { status: 500 });
   }
 
+  // Ensure the primary department has a task_departments row
+  await supabase
+    .from("task_departments")
+    .insert({ task_id: task.id, department_id: task.department_id });
+
   // Insert assignees
   if (assignee_ids.length > 0) {
     await supabase.from("task_assignees").insert(
@@ -107,13 +117,19 @@ export async function POST(request: Request) {
   // Return task with relations
   const { data: full } = await supabase
     .from("tasks")
-    .select(`*, department:departments(*), assignees:task_assignees(profile:profiles(*))`)
+    .select(`
+      *,
+      department:departments(*),
+      assignees:task_assignees(profile:profiles(*)),
+      task_departments(department:departments(*))
+    `)
     .eq("id", task.id)
     .single();
 
   const result = {
     ...full,
     assignees: full?.assignees?.map((a: { profile: unknown }) => a.profile) ?? [],
+    departments: full ? normalizeDepartments(full as unknown as RawTaskDepartments) : [],
   };
 
   return NextResponse.json(result, { status: 201 });

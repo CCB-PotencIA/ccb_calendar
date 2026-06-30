@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import { taskSchema } from "@/lib/validations/task.schema";
+import { normalizeDepartments, type RawTaskDepartments } from "@/lib/utils";
 
 type Params = { params: Promise<{ taskId: string }> };
 
@@ -12,7 +13,14 @@ export async function GET(_req: Request, { params }: Params) {
 
   const { data, error } = await supabase
     .from("tasks")
-    .select(`*, department:departments(*), assignees:task_assignees(profile:profiles(*))`)
+    .select(`
+      *,
+      department:departments(*),
+      assignees:task_assignees(profile:profiles(*)),
+      task_departments(department:departments(*)),
+      subtasks:task_subtasks(*),
+      followups:task_followups(*)
+    `)
     .eq("id", taskId)
     .single();
 
@@ -20,9 +28,21 @@ export async function GET(_req: Request, { params }: Params) {
     return NextResponse.json({ error: "Tarea no encontrada" }, { status: 404 });
   }
 
+  const subtasks = [...(data.subtasks ?? [])].sort(
+    (a, b) =>
+      a.position - b.position ||
+      new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+  );
+  const followups = [...(data.followups ?? [])].sort((a, b) =>
+    (a.followup_date ?? "").localeCompare(b.followup_date ?? "")
+  );
+
   return NextResponse.json({
     ...data,
     assignees: data.assignees?.map((a: { profile: unknown }) => a.profile) ?? [],
+    departments: normalizeDepartments(data as unknown as RawTaskDepartments),
+    subtasks,
+    followups,
   });
 }
 
@@ -59,6 +79,16 @@ export async function PATCH(request: Request, { params }: Params) {
     return NextResponse.json({ error: taskError?.message }, { status: 500 });
   }
 
+  // If the primary department changed, ensure it has a task_departments row
+  if (taskData.department_id) {
+    await supabase
+      .from("task_departments")
+      .upsert(
+        { task_id: taskId, department_id: taskData.department_id },
+        { onConflict: "task_id,department_id" }
+      );
+  }
+
   // Sync assignees if provided
   if (assignee_ids !== undefined) {
     await supabase.from("task_assignees").delete().eq("task_id", taskId);
@@ -87,13 +117,32 @@ export async function PATCH(request: Request, { params }: Params) {
 
   const { data: full } = await supabase
     .from("tasks")
-    .select(`*, department:departments(*), assignees:task_assignees(profile:profiles(*))`)
+    .select(`
+      *,
+      department:departments(*),
+      assignees:task_assignees(profile:profiles(*)),
+      task_departments(department:departments(*)),
+      subtasks:task_subtasks(*),
+      followups:task_followups(*)
+    `)
     .eq("id", taskId)
     .single();
+
+  const subtasks = [...(full?.subtasks ?? [])].sort(
+    (a, b) =>
+      a.position - b.position ||
+      new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+  );
+  const followups = [...(full?.followups ?? [])].sort((a, b) =>
+    (a.followup_date ?? "").localeCompare(b.followup_date ?? "")
+  );
 
   return NextResponse.json({
     ...full,
     assignees: full?.assignees?.map((a: { profile: unknown }) => a.profile) ?? [],
+    departments: full ? normalizeDepartments(full as unknown as RawTaskDepartments) : [],
+    subtasks,
+    followups,
   });
 }
 

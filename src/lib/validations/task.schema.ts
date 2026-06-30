@@ -2,7 +2,6 @@ import { z } from "zod";
 
 const taskBaseSchema = z.object({
   title: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
-  actividad: z.string().optional(),
   origen: z.string().optional(),
   description: z.string().optional(),
   department_id: z.string().uuid("Selecciona un departamento"),
@@ -13,6 +12,8 @@ const taskBaseSchema = z.object({
   start_date: z.string().optional(),
   plazo_legal: z.string().optional(),
   plazo_interno: z.string().min(1, "La fecha de plazo interno es requerida"),
+  responsible_tags: z.array(z.string()).optional(),
+  source_ref: z.string().optional(),
 });
 
 export const taskSchema = taskBaseSchema.refine(

@@ -2,9 +2,40 @@ import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { differenceInCalendarDays, format, formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
+import type { Department } from "@/types/task.types";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
+}
+
+export type RawTaskDepartments = {
+  department_id: string;
+  department: Department | null;
+  task_departments?: Array<{ department: Department | null }>;
+};
+
+/**
+ * Build the ordered, deduped department list for a task: primary
+ * department first, followed by the rest of task_departments.
+ */
+export function normalizeDepartments(task: RawTaskDepartments): Department[] {
+  const seen = new Set<string>();
+  const departments: Department[] = [];
+
+  if (task.department) {
+    departments.push(task.department);
+    seen.add(task.department.id);
+  }
+
+  for (const row of task.task_departments ?? []) {
+    const dept = row.department;
+    if (dept && !seen.has(dept.id)) {
+      departments.push(dept);
+      seen.add(dept.id);
+    }
+  }
+
+  return departments;
 }
 
 export type DeadlineStatus = "overdue" | "due_soon_15" | "due_soon_30" | "on_track";
