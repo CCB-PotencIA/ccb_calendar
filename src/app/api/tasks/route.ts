@@ -20,7 +20,7 @@ export async function GET(request: Request) {
     .from("tasks")
     .select(`
       *,
-      department:departments(*),
+      department:departments!tasks_department_id_fkey(*),
       assignees:task_assignees(profile:profiles(*)),
       task_departments(department:departments(*))
     `)
@@ -119,7 +119,7 @@ export async function POST(request: Request) {
     .from("tasks")
     .select(`
       *,
-      department:departments(*),
+      department:departments!tasks_department_id_fkey(*),
       assignees:task_assignees(profile:profiles(*)),
       task_departments(department:departments(*))
     `)

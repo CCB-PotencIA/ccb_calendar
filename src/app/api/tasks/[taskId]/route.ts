@@ -15,7 +15,7 @@ export async function GET(_req: Request, { params }: Params) {
     .from("tasks")
     .select(`
       *,
-      department:departments(*),
+      department:departments!tasks_department_id_fkey(*),
       assignees:task_assignees(profile:profiles(*)),
       task_departments(department:departments(*)),
       subtasks:task_subtasks(*),
@@ -119,7 +119,7 @@ export async function PATCH(request: Request, { params }: Params) {
     .from("tasks")
     .select(`
       *,
-      department:departments(*),
+      department:departments!tasks_department_id_fkey(*),
       assignees:task_assignees(profile:profiles(*)),
       task_departments(department:departments(*)),
       subtasks:task_subtasks(*),

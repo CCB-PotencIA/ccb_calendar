@@ -55,7 +55,7 @@ export default async function TaskPage({ params }: TaskPageProps) {
     .from("tasks")
     .select(`
       *,
-      departments(id, name, color, created_at),
+      departments!tasks_department_id_fkey(id, name, color, created_at),
       task_departments(department:departments(id, name, color, created_at)),
       task_assignees(
         profile_id,

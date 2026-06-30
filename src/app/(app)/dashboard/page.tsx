@@ -64,14 +64,14 @@ export default async function DashboardPage() {
       .from("tasks")
       .select(`
         id, status, department_id, plazo_interno,
-        departments(id, name, color),
+        departments!tasks_department_id_fkey(id, name, color),
         task_departments(department:departments(id, name, color))
       `),
     supabase
       .from("tasks")
       .select(`
         *,
-        departments!inner(id, name, color),
+        departments!tasks_department_id_fkey!inner(id, name, color),
         task_departments(department:departments(id, name, color)),
         task_assignees(profile_id, profiles(id, email, full_name, avatar_url, role, department_id, created_at, updated_at))
       `)
