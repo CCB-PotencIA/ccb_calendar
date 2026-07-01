@@ -7,7 +7,8 @@ import timeGridPlugin from "@fullcalendar/timegrid";
 import listPlugin from "@fullcalendar/list";
 import interactionPlugin from "@fullcalendar/interaction";
 import esLocale from "@fullcalendar/core/locales/es";
-import { getDeadlineStatus, getDeadlineColor } from "@/lib/utils";
+import { getDeadlineStatus, getDeadlineColor, getDeadlineLabel } from "@/lib/utils";
+import type { DeadlineStatus } from "@/lib/utils";
 import { useTasks } from "@/hooks/useTasks";
 import { CalendarEventContent } from "./CalendarEventContent";
 import { TaskDialog } from "@/components/tasks/TaskDialog";
@@ -52,9 +53,23 @@ export function CalendarView({ initialTasks }: CalendarViewProps) {
     );
   }
 
+  const legendStatuses: DeadlineStatus[] = ["overdue", "due_soon_15", "due_soon_30", "on_track"];
+
   return (
     <>
       <div className="bg-card rounded-xl border border-border p-4 shadow-sm">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 mb-3 text-xs text-muted-foreground">
+          <span className="font-medium text-foreground">Colores por vigencia:</span>
+          {legendStatuses.map((status) => (
+            <span key={status} className="flex items-center gap-1.5">
+              <span
+                className="h-2.5 w-2.5 rounded-full shrink-0"
+                style={{ backgroundColor: getDeadlineColor(status) }}
+              />
+              {getDeadlineLabel(status)}
+            </span>
+          ))}
+        </div>
         <FullCalendar
           plugins={[dayGridPlugin, timeGridPlugin, listPlugin, interactionPlugin]}
           initialView="dayGridMonth"

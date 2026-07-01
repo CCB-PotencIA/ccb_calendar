@@ -8,6 +8,21 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+/**
+ * Parses a Postgres `date` column ("YYYY-MM-DD") as a local calendar date.
+ * `new Date("YYYY-MM-DD")` parses as UTC midnight, which shifts a day
+ * earlier in negative-UTC-offset timezones (e.g. Colombia, UTC-5) once
+ * compared against local "today" — this keeps date-only values pinned
+ * to their intended calendar day regardless of timezone.
+ */
+function parseDateOnly(value: string | Date): Date {
+  if (value instanceof Date) return value;
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(value);
+  if (!match) return new Date(value);
+  const [, year, month, day] = match;
+  return new Date(Number(year), Number(month) - 1, Number(day));
+}
+
 export type RawTaskDepartments = {
   department_id: string;
   department: Department | null;
@@ -43,7 +58,7 @@ export type DeadlineStatus = "overdue" | "due_soon_15" | "due_soon_30" | "on_tra
 export function getDeadlineStatus(plazaInterno: string | Date): DeadlineStatus {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const due = new Date(plazaInterno);
+  const due = parseDateOnly(plazaInterno);
   due.setHours(0, 0, 0, 0);
   const diff = differenceInCalendarDays(due, today);
 
@@ -92,13 +107,13 @@ export function getDeadlineLabel(status: DeadlineStatus): string {
 export function getDaysRemaining(plazaInterno: string | Date): number {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const due = new Date(plazaInterno);
+  const due = parseDateOnly(plazaInterno);
   due.setHours(0, 0, 0, 0);
   return differenceInCalendarDays(due, today);
 }
 
 export function formatDate(date: string | Date, fmt = "dd/MM/yyyy"): string {
-  return format(new Date(date), fmt, { locale: es });
+  return format(parseDateOnly(date), fmt, { locale: es });
 }
 
 export function formatRelativeDate(date: string | Date): string {
