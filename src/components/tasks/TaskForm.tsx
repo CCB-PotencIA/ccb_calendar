@@ -223,7 +223,7 @@ export function TaskForm({ task, onSuccess }: TaskFormProps) {
             name="assignee_ids"
             render={() => (
               <FormItem>
-                <FormLabel>Responsables *</FormLabel>
+                <FormLabel>Responsables (usuarios del sistema) *</FormLabel>
                 <Popover open={assigneePopoverOpen} onOpenChange={setAssigneePopoverOpen}>
                   <PopoverTrigger asChild>
                     <FormControl>
@@ -308,7 +308,10 @@ export function TaskForm({ task, onSuccess }: TaskFormProps) {
           name="responsible_tags"
           render={() => (
             <FormItem>
-              <FormLabel>Etiquetas de responsables</FormLabel>
+              <FormLabel>Otras menciones (comités, cargos, entidades externas)</FormLabel>
+              <p className="text-xs text-muted-foreground -mt-1 mb-1">
+                Solo texto informativo — no son cuentas del sistema ni reciben notificaciones.
+              </p>
               <FormControl>
                 <Input
                   placeholder="Escribe y presiona Enter para agregar"

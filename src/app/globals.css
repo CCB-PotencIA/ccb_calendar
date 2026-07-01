@@ -147,3 +147,22 @@ body {
   border-radius: 4px !important;
   cursor: pointer;
 }
+
+/* Always-visible scrollbar for internal scroll containers (dashboard widgets, etc.) */
+.scrollbar-visible {
+  scrollbar-width: auto;
+  scrollbar-color: var(--muted-foreground) transparent;
+}
+
+.scrollbar-visible::-webkit-scrollbar {
+  width: 8px;
+}
+
+.scrollbar-visible::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-visible::-webkit-scrollbar-thumb {
+  background-color: var(--muted-foreground);
+  border-radius: 9999px;
+}

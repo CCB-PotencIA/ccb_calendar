@@ -26,7 +26,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/tasks": "Tareas",
   "/notifications": "Notificaciones",
   "/admin/users": "Gestión de Usuarios",
-  "/admin/departments": "Departamentos",
+  "/admin/departments": "Vicepresidencia/Unidad",
 };
 
 function getPageTitle(pathname: string): string {

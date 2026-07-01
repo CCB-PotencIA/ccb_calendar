@@ -2,7 +2,6 @@ import { createClient } from "@/lib/supabase/server";
 import { KpiGrid } from "@/components/dashboard/KpiGrid";
 import { DepartmentChart } from "@/components/dashboard/DepartmentChart";
 import { UpcomingTasksWidget } from "@/components/dashboard/UpcomingTasksWidget";
-import { TaskListPanel } from "@/components/dashboard/TaskListPanel";
 import { getDeadlineStatus, normalizeDepartments } from "@/lib/utils";
 import type { DashboardStats, DepartmentTaskCount, TaskWithRelations } from "@/types/task.types";
 
@@ -187,16 +186,14 @@ export default async function DashboardPage() {
 
       <KpiGrid stats={stats} />
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+        <div className="lg:col-span-1">
           <DepartmentChart data={deptData} />
         </div>
-        <div>
+        <div className="lg:col-span-2">
           <UpcomingTasksWidget tasks={upcomingTasks} />
         </div>
       </div>
-
-      <TaskListPanel />
     </div>
   );
 }

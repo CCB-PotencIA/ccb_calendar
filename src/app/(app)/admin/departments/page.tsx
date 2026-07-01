@@ -101,7 +101,7 @@ export default function DepartmentsAdminPage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-foreground">Departamentos</h1>
+          <h1 className="text-xl font-bold text-foreground">Vicepresidencia/Unidad</h1>
           <p className="text-sm text-muted-foreground mt-0.5">
             {departments.length} unidad{departments.length !== 1 ? "es" : ""} registrada{departments.length !== 1 ? "s" : ""}
           </p>

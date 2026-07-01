@@ -27,7 +27,7 @@ const NAV_ITEMS = [
 
 const ADMIN_NAV_ITEMS = [
   { href: "/admin/users", label: "Usuarios", icon: Users },
-  { href: "/admin/departments", label: "Departamentos", icon: Building2 },
+  { href: "/admin/departments", label: "Vicepresidencia/Unidad", icon: Building2 },
 ];
 
 export function Sidebar({ profile }: SidebarProps) {
