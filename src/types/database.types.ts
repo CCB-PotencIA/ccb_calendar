@@ -341,6 +341,73 @@ export type Database = {
           }
         ];
       };
+      department_notification_emails: {
+        Row: {
+          id: string;
+          department_id: string;
+          full_name: string;
+          email: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          department_id: string;
+          full_name: string;
+          email: string;
+          created_at?: string;
+        };
+        Update: {
+          department_id?: string;
+          full_name?: string;
+          email?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "department_notification_emails_department_id_fkey";
+            columns: ["department_id"];
+            isOneToOne: false;
+            referencedRelation: "departments";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      department_email_notification_log: {
+        Row: {
+          id: string;
+          task_id: string;
+          department_id: string;
+          email: string;
+          trigger_days: number;
+          sent_at: string;
+        };
+        Insert: {
+          id?: string;
+          task_id: string;
+          department_id: string;
+          email: string;
+          trigger_days: number;
+          sent_at?: string;
+        };
+        Update: {
+          sent_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "department_email_notification_log_task_id_fkey";
+            columns: ["task_id"];
+            isOneToOne: false;
+            referencedRelation: "tasks";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "department_email_notification_log_department_id_fkey";
+            columns: ["department_id"];
+            isOneToOne: false;
+            referencedRelation: "departments";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
     };
     Views: {
       tasks_with_status: {

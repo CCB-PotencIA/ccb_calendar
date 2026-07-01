@@ -39,7 +39,8 @@ export async function POST(request: Request) {
       .from("tasks")
       .select(`
         id, title, plazo_interno, plazo_legal,
-        assignees:task_assignees(profile:profiles(id, email, full_name))
+        assignees:task_assignees(profile:profiles(id, email, full_name)),
+        task_departments(department_id)
       `)
       .eq("plazo_interno", targetDate)
       .not("status", "in", '("completed","cancelled")');
@@ -99,6 +100,57 @@ export async function POST(request: Request) {
         });
 
         sent++;
+      }
+
+      // Department-list recipients (no login account, email-only)
+      const departmentIds = (task.task_departments as Array<{ department_id: string }>)
+        .map((td) => td.department_id);
+
+      if (departmentIds.length > 0) {
+        const { data: deptRecipients } = await supabase
+          .from("department_notification_emails")
+          .select("department_id, full_name, email")
+          .in("department_id", departmentIds);
+
+        for (const recipient of deptRecipients ?? []) {
+          const { data: existingDeptLog } = await supabase
+            .from("department_email_notification_log")
+            .select("id")
+            .eq("task_id", task.id)
+            .eq("email", recipient.email)
+            .eq("trigger_days", triggerDays)
+            .maybeSingle();
+
+          if (existingDeptLog) { skipped++; continue; }
+
+          const { error: deptEmailError } = await resend.emails.send({
+            from: "CCB Tareas <tareas@camarabaq.org.co>",
+            to: recipient.email,
+            subject: `[CCB] Tarea próxima a vencer en ${triggerDays} días: ${task.title}`,
+            html: buildEmailHtml({
+              recipientName: recipient.full_name,
+              taskTitle: task.title,
+              plazoInterno: task.plazo_interno,
+              plazoLegal: task.plazo_legal,
+              daysUntilDue: triggerDays,
+              taskUrl: `${process.env.NEXT_PUBLIC_APP_URL}/tasks/${task.id}`,
+            }),
+          });
+
+          if (deptEmailError) {
+            console.error(`Dept email failed for task ${task.id} / ${recipient.email}:`, deptEmailError);
+            continue;
+          }
+
+          await supabase.from("department_email_notification_log").insert({
+            task_id: task.id,
+            department_id: recipient.department_id,
+            email: recipient.email,
+            trigger_days: triggerDays,
+          });
+
+          sent++;
+        }
       }
     }
   }

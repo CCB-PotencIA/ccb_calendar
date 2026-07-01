@@ -26,7 +26,7 @@ Internal task management system for the **Cámara de Comercio de Barranquilla (C
 - **Calendar view** — color-coded by deadline urgency (overdue / due in 15d / due in 30d / on track), with a hover preview card and a click-through detail dialog.
 - **Dashboard** — KPI cards, tasks-per-department chart, and an upcoming-deadlines widget.
 - **Admin** — manage departments (Vicepresidencia/Unidad) and invite users.
-- **Notifications** — in-app notifications plus scheduled email reminders (15/30 days before a deadline) via a Vercel Cron job + Resend.
+- **Notifications** — in-app notifications for real assignees, plus scheduled email reminders (15/30 days before a deadline) via a Vercel Cron job + Resend. Email reminders also go to per-department recipient lists (`department_notification_emails`) for people who don't need a login account.
 
 ## Getting started
 
@@ -67,6 +67,7 @@ Migrations live in `supabase/migrations/`, applied in order:
 | `0004_security_hardening.sql` | `security_invoker` on views, pinned `search_path` on functions |
 | `0005_task_departments.sql` | Many-to-many department support |
 | `0006_subtasks_followups_tags.sql` | Subtasks (+ auto-progress trigger), follow-ups, `responsible_tags`, `source_ref` |
+| `0007_department_notification_emails.sql` | Email-only notification recipients per department (no login account needed) |
 
 Seed data (the 8 real Vicepresidencias/Unidades) is in `supabase/seed.sql`.
 
